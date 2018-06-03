@@ -97,7 +97,7 @@ class System {
 		#if hlsdl
 			sdl.Sdl.init();
 			@:privateAccess Stage.initChars();
-			@:privateAccess Stage.inst = new Stage(title, width, height);
+			@:privateAccess Stage.inst = new Stage(title, get_width(), get_height());
 			init();
 		#elseif hldx
 			@:privateAccess Stage.inst = new Stage(title, width, height);
