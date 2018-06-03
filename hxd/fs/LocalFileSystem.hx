@@ -385,10 +385,10 @@ class LocalFileSystem implements FileSystem {
 		}
 		#else
 		var f = sys.FileSystem.fullPath(baseDir + path);
-		if( f == null )
+        if( f == null )
 			return null;
 		f = f.split("\\").join("/");
-		if( !check || (f == baseDir + path && sys.FileSystem.exists(f)) ) {
+		if( !check || (#if mobile #else (f == baseDir + path) && #end sys.FileSystem.exists(f)) ) {
 			e = new LocalEntry(this, path.split("/").pop(), path, f);
 			convert(e);
 		}
