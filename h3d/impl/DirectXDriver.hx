@@ -173,7 +173,7 @@ class DirectXDriver extends h3d.impl.Driver {
 	}
 
 	override function dispose() {
-		Driver.disposeDriver(driver);
+		//Driver.disposeDriver(driver);
 		driver = null;
 	}
 
