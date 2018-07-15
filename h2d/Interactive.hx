@@ -130,7 +130,7 @@ class Interactive extends Drawable implements hxd.SceneEvents.Interactive {
 				lastPushFingerID = e.fingerId;
 				onPush(e);
 			}
-		case ERelease:
+		case ERelease if (lastPushFingerID == e.fingerId):
 			if( enableRightButton || e.button == 0 ) {
 				onRelease(e);
 				if( mouseDownButton == e.button )
@@ -138,7 +138,7 @@ class Interactive extends Drawable implements hxd.SceneEvents.Interactive {
 			}
 			lastPushFingerID = haxe.Int64.make(0, -1);
 			mouseDownButton = -1;
-		case EReleaseOutside:
+		case EReleaseOutside if (lastPushFingerID == e.fingerId):
 			if( enableRightButton || e.button == 0 ) {
 				e.kind = ERelease;
 				onRelease(e);
