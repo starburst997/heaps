@@ -18,14 +18,14 @@ class Interactive extends Drawable implements hxd.SceneEvents.Interactive {
 	public var enableRightButton : Bool;
 	var scene : Scene;
 	var mouseDownButton : Int = -1;
-	var lastPushFingerID : Int;
+	var lastPushFingerID : haxe.Int64;
 	var parentMask : Mask;
 
 	public function new(width, height, ?parent) {
 		super(parent);
 		this.width = width;
 		this.height = height;
-		lastPushFingerID = -1;
+		lastPushFingerID = haxe.Int64.make(0, -1);
 		cursor = Button;
 	}
 
@@ -136,7 +136,7 @@ class Interactive extends Drawable implements hxd.SceneEvents.Interactive {
 				if( mouseDownButton == e.button )
 					onClick(e);
 			}
-			lastPushFingerID = -1;
+			lastPushFingerID = haxe.Int64.make(0, -1);
 			mouseDownButton = -1;
 		case EReleaseOutside:
 			if( enableRightButton || e.button == 0 ) {
@@ -144,7 +144,7 @@ class Interactive extends Drawable implements hxd.SceneEvents.Interactive {
 				onRelease(e);
 				e.kind = EReleaseOutside;
 			}
-			lastPushFingerID = -1;
+			lastPushFingerID = haxe.Int64.make(0, -1);
 			mouseDownButton = -1;
 		case EOver:
 			onOver(e);
