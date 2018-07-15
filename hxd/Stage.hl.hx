@@ -163,12 +163,10 @@ class Stage {
 			}
 		#if hlsdl
 		case TouchDown:
-			trace('TOUCH DOWN', haxe.Int64.make(e.fingerIdHigh, e.fingerIdLow));
 			curMouseX = Std.int(e.mouseX * get_width() / 100);
 			curMouseY = Std.int(e.mouseY * get_height() / 100);
 			eh = new Event(EPush,curMouseX,curMouseY, haxe.Int64.make(e.fingerIdHigh, e.fingerIdLow));
 		case TouchUp:
-			trace('TOUCH UP', haxe.Int64.make(e.fingerIdHigh, e.fingerIdLow));
 			curMouseX = Std.int(e.mouseX * get_width() / 100);
 			curMouseY = Std.int(e.mouseY * get_height() / 100);
 			eh = new Event(ERelease,curMouseX,curMouseY, haxe.Int64.make(e.fingerIdHigh, e.fingerIdLow));
