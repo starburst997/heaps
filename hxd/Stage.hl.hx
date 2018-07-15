@@ -135,42 +135,56 @@ class Stage {
 		switch( e.type ) {
 		case WindowState:
 			switch( e.state ) {
-			case Resize:
-				windowWidth = window.width;
-				windowHeight = window.height;
-				onResize(null);
-			case Focus:
-				#if hldx
-				// return to exclusive mode
-				if( window.displayMode == Fullscreen && wasBlurred ) {
-					window.displayMode = Borderless;
-					window.displayMode = Fullscreen;
-				}
-				#end
-				wasBlurred = false;
-			case Blur:
-				wasBlurred = true;
-				#if hldx
-				// release all keys
-				var ev = new Event(EKeyUp);
-				for( i in 0...@:privateAccess hxd.Key.keyPressed.length )
-					if( hxd.Key.isDown(i) ) {
-						ev.keyCode = i;
-						event(ev);
+				case Resize:
+					windowWidth = window.width;
+					windowHeight = window.height;
+					onResize(null);
+				case Focus:
+					#if hldx
+					// return to exclusive mode
+					if( window.displayMode == Fullscreen && wasBlurred ) {
+						window.displayMode = Borderless;
+						window.displayMode = Fullscreen;
 					}
-				#end
-			default:
+					#end
+					wasBlurred = false;
+				case Blur:
+					wasBlurred = true;
+					#if hldx
+					// release all keys
+					var ev = new Event(EKeyUp);
+					for( i in 0...@:privateAccess hxd.Key.keyPressed.length )
+						if( hxd.Key.isDown(i) ) {
+							ev.keyCode = i;
+							event(ev);
+						}
+					#end
+				default:
 			}
+		#if hlsdl
+		case TouchDown:
+			curMouseX = Std.int(e.mouseX * get_width() / 100);
+			curMouseY = Std.int(e.mouseY * get_height() / 100);
+			eh = new Event(EPush,curMouseX,curMouseY, haxe.Int64.make(e.fingerIdHigh, e.fingerIdLow));
+		case TouchUp:
+			curMouseX = Std.int(e.mouseX * get_width() / 100);
+			curMouseY = Std.int(e.mouseY * get_height() / 100);
+			eh = new Event(ERelease,curMouseX,curMouseY, haxe.Int64.make(e.fingerIdHigh, e.fingerIdLow));
+		case TouchMove:
+			curMouseX = Std.int(e.mouseX * get_width() / 100);
+			curMouseY = Std.int(e.mouseY * get_height() / 100);
+			eh = new Event(EMove,curMouseX,curMouseY, haxe.Int64.make(e.fingerIdHigh, e.fingerIdLow));
+		#end
 		case MouseDown:
 			curMouseX = e.mouseX;
 			curMouseY = e.mouseY;
 			eh = new Event(EPush, e.mouseX, e.mouseY);
 			// middle button -> 2 / right button -> 1
 			eh.button = switch( e.button - 1 ) {
-			case 0: 0;
-			case 1: 2;
-			case 2: 1;
-			case x: x;
+				case 0: 0;
+				case 1: 2;
+				case 2: 1;
+				case x: x;
 			}
 		case MouseUp:
 			curMouseX = e.mouseX;
