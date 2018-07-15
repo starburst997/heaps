@@ -165,15 +165,15 @@ class Stage {
 		case TouchDown:
 			curMouseX = Std.int(e.mouseX * get_width() / 100);
 			curMouseY = Std.int(e.mouseY * get_height() / 100);
-			eh = new Event(EPush,curMouseX,curMouseY, haxe.Int64.make(e.fingerIdHigh, e.fingerIdLow));
+			eh = new Event(EPush,curMouseX,curMouseY, e.fingerId);
 		case TouchUp:
 			curMouseX = Std.int(e.mouseX * get_width() / 100);
 			curMouseY = Std.int(e.mouseY * get_height() / 100);
-			eh = new Event(ERelease,curMouseX,curMouseY, haxe.Int64.make(e.fingerIdHigh, e.fingerIdLow));
+			eh = new Event(ERelease,curMouseX,curMouseY, e.fingerId);
 		case TouchMove:
 			curMouseX = Std.int(e.mouseX * get_width() / 100);
 			curMouseY = Std.int(e.mouseY * get_height() / 100);
-			eh = new Event(EMove,curMouseX,curMouseY, haxe.Int64.make(e.fingerIdHigh, e.fingerIdLow));
+			eh = new Event(EMove,curMouseX,curMouseY, e.fingerId);
 		#end
 		case MouseDown:
 			curMouseX = e.mouseX;
