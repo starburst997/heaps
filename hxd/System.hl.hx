@@ -97,7 +97,11 @@ class System {
 		#if hlsdl
 			sdl.Sdl.init();
 			@:privateAccess Stage.initChars();
-			@:privateAccess Stage.inst = new Stage(title, width, height);
+            #if mobile
+			@:privateAccess Stage.inst = new Stage(title, get_width(), get_height());
+            #else
+            @:privateAccess Stage.inst = new Stage(title, width, height);
+            #end
 			init();
 		#elseif hldx
 			@:privateAccess Stage.inst = new Stage(title, width, height);
