@@ -131,21 +131,25 @@ class Interactive extends Drawable implements hxd.SceneEvents.Interactive {
 				onPush(e);
 			}
 		case ERelease:
-			if( enableRightButton || e.button == 0 ) {
-				onRelease(e);
-				if( mouseDownButton == e.button )
-					onClick(e);
+			if (lastPushFingerID == e.fingerId) {
+				if( enableRightButton || e.button == 0 ) {
+					onRelease(e);
+					if( mouseDownButton == e.button )
+						onClick(e);
+				}
+				lastPushFingerID = haxe.Int64.make(0, -1);
+				mouseDownButton = -1;
 			}
-			lastPushFingerID = haxe.Int64.make(0, -1);
-			mouseDownButton = -1;
 		case EReleaseOutside:
-			if( enableRightButton || e.button == 0 ) {
-				e.kind = ERelease;
-				onRelease(e);
-				e.kind = EReleaseOutside;
+			if (lastPushFingerID == e.fingerId) {
+				if( enableRightButton || e.button == 0 ) {
+					e.kind = ERelease;
+					onRelease(e);
+					e.kind = EReleaseOutside;
+				}
+				lastPushFingerID = haxe.Int64.make(0, -1);
+				mouseDownButton = -1;
 			}
-			lastPushFingerID = haxe.Int64.make(0, -1);
-			mouseDownButton = -1;
 		case EOver:
 			onOver(e);
 			if( !e.cancel && cursor != null )
