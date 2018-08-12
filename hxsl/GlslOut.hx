@@ -25,6 +25,8 @@ class GlslOut {
 		m.set(ToBool, "bool");
 		m.set(LReflect, "reflect");
 		m.set(Mat3x4, "_mat3x4");
+		m.set(VertexID, "gl_VertexID");
+		m.set(InstanceID, "gl_InstanceID");
 		for( g in m )
 			KWDS.set(g, true);
 		m;
@@ -531,20 +533,7 @@ class GlslOut {
 		buf = new StringBuf();
 		exprValues = [];
 
-		/*
-			Intel HD driver fix:
-				single element arrays are interpreted as not arrays, creating mismatch when
-				handling uniforms/textures. The fix changes decl[1] into decl[2] with one unused element
-
-				This fix is only for desktop, WebGL has errors with Cube Textures if there's
-				both Texture2D and TextureCube arrays in shader.
-				Also disable it for third party GL implementations (consoles)
-		*/
-		#if !(usegl || js)
-		intelDriverFix = true;
-		#end
-
-		decl("precision mediump float;");
+		decl("precision highp float;");
 
 		if( s.funs.length != 1 ) throw "assert";
 		var f = s.funs[0];

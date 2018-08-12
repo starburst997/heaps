@@ -384,7 +384,7 @@ class World extends Object {
 				}
 
 				for( i in 0...m.indexCount )
-					model.idx.push(data.indexes[i] + startIndex);
+					model.idx.push(data.indexes[i] + startVertex);
 
 				startVertex += m.vertexCount;
 				startIndex += m.indexCount;
@@ -434,13 +434,20 @@ class World extends Object {
 		soil.material.shadows = true;
 	}
 
+	function precompute( e : WorldElement ) {
+
+	}
+
 	function initChunkElements( c : WorldChunk ) {
 		for( e in c.elements ) {
 			var model = e.model;
+			precompute(e);
 			for( g in model.geometries ) {
 				var b = c.buffers.get(g.m.bits);
 				if( b == null ) {
-					b = new h3d.scene.Mesh(new h3d.prim.BigPrimitive(getStride(model), true), c.root);
+					var bp = new h3d.prim.BigPrimitive(getStride(model), true);
+					bp.hasTangents = enableNormalMaps;
+					b = new h3d.scene.Mesh(bp, c.root);
 					b.name = g.m.name;
 					c.buffers.set(g.m.bits, b);
 					initMaterial(b, g.m);

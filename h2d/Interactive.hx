@@ -18,12 +18,14 @@ class Interactive extends Drawable implements hxd.SceneEvents.Interactive {
 	public var enableRightButton : Bool;
 	var scene : Scene;
 	var mouseDownButton : Int = -1;
+	var lastPushFingerID : haxe.Int64;
 	var parentMask : Mask;
 
 	public function new(width, height, ?parent) {
 		super(parent);
 		this.width = width;
 		this.height = height;
+		lastPushFingerID = haxe.Int64.make(0, -1);
 		cursor = Button;
 	}
 
@@ -125,22 +127,29 @@ class Interactive extends Drawable implements hxd.SceneEvents.Interactive {
 		case EPush:
 			if( enableRightButton || e.button == 0 ) {
 				mouseDownButton = e.button;
+				lastPushFingerID = e.fingerId;
 				onPush(e);
 			}
 		case ERelease:
-			if( enableRightButton || e.button == 0 ) {
-				onRelease(e);
-				if( mouseDownButton == e.button )
-					onClick(e);
+			if (lastPushFingerID == e.fingerId) {
+				if( enableRightButton || e.button == 0 ) {
+					onRelease(e);
+					if( mouseDownButton == e.button )
+						onClick(e);
+				}
+				lastPushFingerID = haxe.Int64.make(0, -1);
+				mouseDownButton = -1;
 			}
-			mouseDownButton = -1;
 		case EReleaseOutside:
-			if( enableRightButton || e.button == 0 ) {
-				e.kind = ERelease;
-				onRelease(e);
-				e.kind = EReleaseOutside;
+			if (lastPushFingerID == e.fingerId) {
+				if( enableRightButton || e.button == 0 ) {
+					e.kind = ERelease;
+					onRelease(e);
+					e.kind = EReleaseOutside;
+				}
+				lastPushFingerID = haxe.Int64.make(0, -1);
+				mouseDownButton = -1;
 			}
-			mouseDownButton = -1;
 		case EOver:
 			onOver(e);
 			if( !e.cancel && cursor != null )

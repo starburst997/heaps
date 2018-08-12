@@ -1,5 +1,7 @@
 package hxd.res;
 
+using Lambda;
+
 class BitmapFont extends Resource {
 
 	var loader : Loader;
@@ -59,6 +61,51 @@ class BitmapFont extends Resource {
 
 				glyphs.set(Std.parseInt(c.att.id), fc);
 			}
+		case 0x6F666E69:
+			// support for Hiero format
+			// https://github.com/libgdx/libgdx
+			entry.getBytes().toString().split('\n').iter(function(line) {
+				var fields = line.split(' ');
+				var name = fields.shift();
+				var fieldsValue = fields.map(function(field) {
+					var pair = field.split('=');
+					return { name: pair[0], value: pair[1] }; 
+				});
+				switch(name) {
+					case 'info' : fieldsValue.iter(function(field) switch(field.name) {
+						case 'size' : size = Std.parseInt(field.value);
+						case 'face' : name = field.value;
+						default : 
+					});
+					case 'common' : fieldsValue.iter(function(field) switch(field.name) {
+						case 'lineHeight' : lineHeight = Std.parseInt(field.value);
+						default : 
+					});
+					case 'page' :
+					case 'chars' :
+					case 'char' :
+						var id = 0, x = 0, y = 0, width = 0, height = 0, xoffset = 0, yoffset = 0, xadvance = 0;
+						fieldsValue.iter(function(field) {
+							var value = Std.parseInt(field.value);
+							switch(field.name) {
+								case 'id' : id = value;
+								case 'x' : x = value;
+								case 'y' : y = value;
+								case 'width' : width = value;
+								case 'height' : height = value;
+								case 'xoffset' : xoffset = value;
+								case 'yoffset' : yoffset = value;
+								case 'xadvance' : xadvance = value;
+								default : 
+							}
+						});
+
+						var t = tile.sub(x, y, width, height, xoffset, yoffset);
+						var fc = new h2d.Font.FontChar(t, width - 1);
+						if (id != 32) glyphs.set(id, fc);
+					default :
+				}
+			});
 		case sign:
 			throw "Unknown font signature " + StringTools.hex(sign, 8);
 		}

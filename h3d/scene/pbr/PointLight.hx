@@ -11,6 +11,7 @@ class PointLight extends Light {
 
 	public function new(?parent) {
 		pbr = new h3d.shader.pbr.Light.PointLight();
+		shadows = new h3d.pass.PointShadowMap(this, true);
 		super(pbr,parent);
 		range = 10;
 		primitive = h3d.prim.Sphere.defaultUnitSphere();
@@ -29,10 +30,9 @@ class PointLight extends Light {
 		primitive.render(ctx.engine);
 	}
 
-	override function emit(ctx:RenderContext) {
-		if( ctx.pbrLightPass == null )
-			throw "Rendering a pbr light require a PBR compatible scene renderer";
-		ctx.emitPass(ctx.pbrLightPass, this);
+	override function sync(ctx) {
+		super.sync(ctx);
+
 		pbr.lightColor.load(_color);
 		var range = hxd.Math.max(range, 1e-10);
 		var size = hxd.Math.min(size, range);
@@ -43,4 +43,11 @@ class PointLight extends Light {
 		pbr.pointSize = size;
 	}
 
+	override function emit(ctx:RenderContext) {
+		if( ctx.pbrLightPass == null )
+			throw "Rendering a pbr light require a PBR compatible scene renderer";
+
+		super.emit(ctx);
+		ctx.emitPass(ctx.pbrLightPass, this);
+	}
 }

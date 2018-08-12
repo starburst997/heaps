@@ -11,6 +11,11 @@ class Indirect extends PropsDefinition {
 		@param var irrPower : Float;
 
 		@const var showSky : Bool;
+		@const var skyColor : Bool;
+		@param var skyColorValue : Vec3;
+
+		@const var drawIndirectDiffuse : Bool;
+		@const var drawIndirectSpecular : Bool;
 		@param var skyMap : SamplerCube;
 		@param var cameraInvViewProj : Mat4;
 		@param var emissivePower : Float;
@@ -20,8 +25,12 @@ class Indirect extends PropsDefinition {
 			var isSky = normal.dot(normal) <= 0;
 			if( isSky ) {
 				if( showSky ) {
-					normal = (vec3( uvToScreen(calculatedUV) * 5. /*?*/ , 1. ) * cameraInvViewProj.mat3x4()).normalize();
-					pixelColor.rgb = skyMap.get(normal).rgb.pow(vec3(2.)) * irrPower;
+					if( skyColor ) {
+						pixelColor.rgb = skyColorValue * irrPower;
+					} else {
+						normal = (vec3( uvToScreen(calculatedUV) * 5. /*?*/ , 1. ) * cameraInvViewProj.mat3x4()).normalize();
+						pixelColor.rgb = skyMap.get(normal).rgb.pow(vec3(2.)) * irrPower;
+					}
 				} else
 					discard;
 			} else {
@@ -34,7 +43,11 @@ class Indirect extends PropsDefinition {
 				var envBRDF = irrLut.get(vec2(roughness, NdV));
 				var specular = envSpec * (F * envBRDF.x + envBRDF.y);
 
+				if( !drawIndirectDiffuse ) diffuse = vec3(0.);
+				if( !drawIndirectSpecular ) specular = vec3(0.);
+
 				var indirect = (diffuse * (1 - metalness) * (1 - F) + specular) * irrPower;
+
 				pixelColor.rgb += indirect * occlusion + albedo * emissive * emissivePower;
 			}
 		}
@@ -49,11 +62,8 @@ class Direct extends PropsDefinition {
 		var pbrLightDirection : Vec3;
 		var pbrLightColor : Vec3;
 		@const var doDiscard : Bool = true;
-		@const var enableShadow : Bool = true;
 
 		function fragment() {
-
-			if( !enableShadow ) shadow = 1.;
 
 			var NdL = normal.dot(pbrLightDirection).max(0.);
 			if( pbrLightColor.dot(pbrLightColor) > 0.0001 && NdL > 0 ) {

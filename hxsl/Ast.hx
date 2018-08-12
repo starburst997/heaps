@@ -81,6 +81,7 @@ enum VarQualifier {
 	Precision( p : Prec );
 	Range( min : Float, max : Float );
 	Ignore; // the variable is ignored in reflection (inspector)
+	PerInstance( v : Int );
 }
 
 enum Prec {
@@ -233,7 +234,11 @@ enum TGlobal {
 	Fwidth;
 	// debug / internal
 	ChannelRead;
+	ChannelReadLod;
 	Trace;
+	// instancing
+	VertexID;
+	InstanceID;
 }
 
 enum Component {
