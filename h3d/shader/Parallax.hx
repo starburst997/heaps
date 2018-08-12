@@ -21,10 +21,13 @@ class Parallax extends hxsl.Shader {
 
 		function fragment() {
 			var viewWS = (camera.position - transformedPosition).normalize();
-			var n = vertexTransformedNormal;
-			var tanX = transformedTangent.xyz.normalize();
-			var tanY = n.cross(tanX);
-			var viewNS = (vec3(viewWS.dot(tanX), viewWS.dot(tanY), viewWS.dot(n)) * global.modelViewInverse.mat3()).normalize();
+			var viewNS : Vec3;
+			{
+				var n = vertexTransformedNormal.normalize();
+				var tanX = transformedTangent.xyz.normalize();
+				var tanY = n.cross(tanX);
+				viewNS = vec3(viewWS.dot(tanX), viewWS.dot(tanY), viewWS.dot(n)).normalize();
+			}
 			if( maxLayers == 0 )
 				calculatedUV += viewNS.xy * heightMap.get(calculatedUV) * amount;
 			else {
@@ -33,10 +36,10 @@ class Parallax extends hxsl.Shader {
 				var curLayerDepth = 0.;
 				var delta = (viewNS.xy / viewNS.z) * amount / numLayers;
 				var curUV = calculatedUV;
-				var curDepth = heightMap.get(curUV);
+				var curDepth = heightMap.getLod(curUV,0.);
 			    while( curLayerDepth < curDepth ) {
 			        curUV += delta;
-			        curDepth = heightMap.get(curUV);
+			        curDepth = heightMap.getLod(curUV,0.);
 			        curLayerDepth += layerDepth;
 				}
 				var prevUV = curUV - delta;

@@ -14,6 +14,8 @@ private typedef GL = js.html.webgl.GL;
 private extern class GL2 extends js.html.webgl.GL {
 	// webgl2
 	function drawBuffers( buffers : Array<Int> ) : Void;
+	function vertexAttribDivisor( index : Int, divisor : Int ) : Void;
+	function drawElementsInstanced( mode : Int, count : Int, type : Int, offset : Int, instanceCount : Int) : Void;
 	function getUniformBlockIndex( p : Program, name : String ) : Int;
 	function bindBufferBase( target : Int, index : Int, buffer : js.html.webgl.Buffer ) : Void;
 	function uniformBlockBinding( p : Program, blockIndex : Int, blockBinding : Int ) : Void;
@@ -119,6 +121,7 @@ private class CompiledAttribute {
 	public var type : Int;
 	public var size : Int;
 	public var offset : Int;
+	public var divisor : Int;
 	public function new() {
 	}
 }
@@ -165,6 +168,7 @@ class GlDriver extends Driver {
 	var frame : Int;
 	var lastActiveIndex : Int = 0;
 	var curColorMask = -1;
+	var currentDivisor : Array<Int> = [for( i in 0...32 ) 0];
 
 	var bufferWidth : Int;
 	var bufferHeight : Int;
@@ -181,6 +185,7 @@ class GlDriver extends Driver {
 	var shaderVersion : Null<Int>;
 	var firstShader = true;
 	var rightHanded = false;
+	var hasMultiIndirect = false;
 
 	public function new(antiAlias=0) {
 		#if js
@@ -202,6 +207,10 @@ class GlDriver extends Driver {
 		commonFB = gl.createFramebuffer();
 		programs = new Map();
 		defStencil = new Stencil();
+
+		#if hl
+		hasMultiIndirect = gl.getConfigParameter(0) > 0;
+		#end
 
 		var v : String = gl.getParameter(GL.VERSION);
 		var reg = ~/ES ([0-9]+\.[0-9]+)/;
@@ -425,6 +434,14 @@ class GlDriver extends Driver {
 					a.size = size;
 					a.index = index;
 					a.offset = p.stride;
+					a.divisor = 0;
+					if( v.qualifiers != null ) {
+						for( q in v.qualifiers )
+							switch( q ) {
+							case PerInstance(n): a.divisor = n;
+							default:
+							}
+					}
 					p.attribs.push(a);
 					p.attribNames.push(v.name);
 					p.stride += size;
@@ -929,16 +946,14 @@ class GlDriver extends Driver {
 		return { b : b, stride : m.stride #if multidriver, driver : this #end };
 	}
 
-	override function allocIndexes( count : Int ) : IndexBuffer {
+	override function allocIndexes( count : Int, is32 : Bool ) : IndexBuffer {
 		var b = gl.createBuffer();
+		var size = is32 ? 4 : 2;
 		gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, b);
 		#if js
-		gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, count * 2, GL.STATIC_DRAW);
+		gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, count * size, GL.STATIC_DRAW);
 		#elseif hl
-		gl.bufferDataSize(GL.ELEMENT_ARRAY_BUFFER, count * 2, GL.STATIC_DRAW);
-		#else
-		var tmp = new Uint16Array(count);
-		gl.bufferData(GL.ELEMENT_ARRAY_BUFFER, tmp, GL.STATIC_DRAW);
+		gl.bufferDataSize(GL.ELEMENT_ARRAY_BUFFER, count * size, GL.STATIC_DRAW);
 		#end
 		var outOfMem = gl.getError() == GL.OUT_OF_MEMORY;
 		gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, null);
@@ -947,7 +962,7 @@ class GlDriver extends Driver {
 			gl.deleteBuffer(b);
 			return null;
 		}
-		return b;
+		return { b : b, is32 : is32 };
 	}
 
 	override function disposeTexture( t : h3d.mat.Texture ) {
@@ -961,7 +976,7 @@ class GlDriver extends Driver {
 	}
 
 	override function disposeIndexes( i : IndexBuffer ) {
-		gl.deleteBuffer(i);
+		gl.deleteBuffer(i.b);
 	}
 
 	override function disposeVertexes( v : VertexBuffer ) {
@@ -1115,30 +1130,43 @@ class GlDriver extends Driver {
 	}
 
 	override function uploadIndexBuffer( i : IndexBuffer, startIndice : Int, indiceCount : Int, buf : hxd.IndexBuffer, bufPos : Int ) {
-		gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, i);
+		var bits = i.is32 ? 2 : 1;
+		gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, i.b);
 		#if hl
 		var data = #if hl hl.Bytes.getArray(buf.getNative()) #else buf.getNative() #end;
-		gl.bufferSubData(GL.ELEMENT_ARRAY_BUFFER, startIndice * 2, streamData(data,bufPos*2,indiceCount*2), bufPos * 2 * STREAM_POS, indiceCount * 2);
+		gl.bufferSubData(GL.ELEMENT_ARRAY_BUFFER, startIndice << bits, streamData(data,bufPos << bits,indiceCount << bits), (bufPos << bits) * STREAM_POS, indiceCount << bits);
 		#else
 		var buf = new Uint16Array(buf.getNative());
-		var sub = new Uint16Array(buf.buffer, bufPos * 2, indiceCount);
-		gl.bufferSubData(GL.ELEMENT_ARRAY_BUFFER, startIndice * 2, sub);
+		var sub = new Uint16Array(buf.buffer, bufPos << bits, indiceCount);
+		gl.bufferSubData(GL.ELEMENT_ARRAY_BUFFER, startIndice << bits, sub);
 		#end
 		gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, null);
 		curIndexBuffer = null;
 	}
 
 	override function uploadIndexBytes( i : IndexBuffer, startIndice : Int, indiceCount : Int, buf : haxe.io.Bytes , bufPos : Int ) {
-		gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, i);
+		var bits = i.is32 ? 2 : 1;
+		gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, i.b);
 		#if hl
-		gl.bufferSubData(GL.ELEMENT_ARRAY_BUFFER, startIndice * 2, streamData(buf.getData(),bufPos * 2, indiceCount * 2), bufPos * 2 * STREAM_POS, indiceCount * 2);
+		gl.bufferSubData(GL.ELEMENT_ARRAY_BUFFER, startIndice << bits, streamData(buf.getData(),bufPos << bits, indiceCount << bits), (bufPos << bits) * STREAM_POS, indiceCount << bits);
 		#else
 		var buf = bytesToUint8Array(buf);
-		var sub = new Uint8Array(buf.buffer, bufPos * 2, indiceCount * 2);
-		gl.bufferSubData(GL.ELEMENT_ARRAY_BUFFER, startIndice * 2, sub);
+		var sub = new Uint8Array(buf.buffer, bufPos << bits, indiceCount << bits);
+		gl.bufferSubData(GL.ELEMENT_ARRAY_BUFFER, startIndice << bits, sub);
 		#end
 		gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, null);
 		curIndexBuffer = null;
+	}
+
+	inline function updateDivisor( a : CompiledAttribute ) {
+		if( currentDivisor[a.index] != a.divisor ) {
+			#if (!hlsdl || (hlsdl >= "1.7"))
+			currentDivisor[a.index] = a.divisor;
+			gl.vertexAttribDivisor(a.index, a.divisor);
+			#else
+			throw "vertexAttribDivisor requires HL 1.7+";
+			#end
+		}
 	}
 
 	override function selectBuffer( v : h3d.Buffer ) {
@@ -1168,6 +1196,7 @@ class GlDriver extends Driver {
 			for( a in curShader.attribs ) {
 				var pos = a.offset;
 				gl.vertexAttribPointer(a.index, a.size, a.type, false, m.stride * 4, pos * 4);
+				updateDivisor(a);
 			}
 		} else {
 			var offset = 8;
@@ -1189,6 +1218,7 @@ class GlDriver extends Driver {
 					if( offset > m.stride ) throw "Buffer is missing '"+s+"' data, set it to RAW format ?" #if debug + @:privateAccess v.allocPos #end;
 				}
 				gl.vertexAttribPointer(a.index, a.size, a.type, false, m.stride * 4, pos * 4);
+				updateDivisor(a);
 			}
 		}
 	}
@@ -1197,6 +1227,7 @@ class GlDriver extends Driver {
 		for( a in curShader.attribs ) {
 			gl.bindBuffer(GL.ARRAY_BUFFER, @:privateAccess buffers.buffer.buffer.vbuf.b);
 			gl.vertexAttribPointer(a.index, a.size, a.type, false, buffers.buffer.buffer.stride * 4, buffers.offset * 4);
+			updateDivisor(a);
 			buffers = buffers.next;
 		}
 		curBuffer = null;
@@ -1205,9 +1236,69 @@ class GlDriver extends Driver {
 	override function draw( ibuf : IndexBuffer, startIndex : Int, ntriangles : Int ) {
 		if( ibuf != curIndexBuffer ) {
 			curIndexBuffer = ibuf;
-			gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, ibuf);
+			gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, ibuf.b);
 		}
-		gl.drawElements(GL.TRIANGLES, ntriangles * 3, GL.UNSIGNED_SHORT, startIndex * 2);
+		if( ibuf.is32 )
+			gl.drawElements(GL.TRIANGLES, ntriangles * 3, GL.UNSIGNED_INT, startIndex * 4);
+		else
+			gl.drawElements(GL.TRIANGLES, ntriangles * 3, GL.UNSIGNED_SHORT, startIndex * 2);
+	}
+
+	override function allocInstanceBuffer( b : InstanceBuffer, bytes : haxe.io.Bytes ) {
+		#if( !js && (!hlsdl || (hlsdl >= "1.7")) )
+		if( hasMultiIndirect ) {
+			var buf = gl.createBuffer();
+			gl.bindBuffer(GL2.DRAW_INDIRECT_BUFFER, buf);
+			gl.bufferData(GL2.DRAW_INDIRECT_BUFFER, b.commandCount * 20, streamData(bytes.getData(),0, b.commandCount * 20), GL.DYNAMIC_DRAW);
+			gl.bindBuffer(GL2.DRAW_INDIRECT_BUFFER, null);
+			b.data = buf;
+			return;
+		}
+		#end
+		var data = [];
+		for( i in 0...b.commandCount ) {
+			var p = i * 5 * 4;
+			var indexCount = bytes.getInt32(p);
+			var instanceCount = bytes.getInt32(p+4);
+			var offIndex = bytes.getInt32(p+8);
+			var offVertex = bytes.getInt32(p+12);
+			var offInstance = bytes.getInt32(p+16);
+			if( offVertex != 0 || offInstance != 0 )
+				throw "baseVertex and baseInstance must be zero on this platform";
+			data.push(indexCount);
+			data.push(offIndex);
+			data.push(instanceCount);
+		}
+		b.data = data;
+	}
+
+	override function disposeInstanceBuffer(b:InstanceBuffer) {
+		b.data = null;
+	}
+
+	override function drawInstanced( ibuf : IndexBuffer, commands : InstanceBuffer ) {
+		if( ibuf != curIndexBuffer ) {
+			curIndexBuffer = ibuf;
+			gl.bindBuffer(GL.ELEMENT_ARRAY_BUFFER, ibuf.b);
+		}
+		#if (!js && (!hlsdl || hlsdl >= "1.7"))
+		if( hasMultiIndirect ) {
+			gl.bindBuffer(GL2.DRAW_INDIRECT_BUFFER, commands.data);
+			if( ibuf.is32 )
+				gl.multiDrawElementsIndirect(GL.TRIANGLES, GL.UNSIGNED_INT, null, commands.commandCount, 0);
+			else
+				gl.multiDrawElementsIndirect(GL.TRIANGLES, GL.UNSIGNED_SHORT, null, commands.commandCount, 0);
+			gl.bindBuffer(GL2.DRAW_INDIRECT_BUFFER, null);
+			return;
+		}
+		#end
+		var args : Array<Int> = commands.data;
+		var p = 0;
+		for( i in 0...Std.int(args.length/3) )
+			if( ibuf.is32 )
+				gl.drawElementsInstanced(GL.TRIANGLES, args[p++], GL.UNSIGNED_INT, args[p++], args[p++]);
+			else
+				gl.drawElementsInstanced(GL.TRIANGLES, args[p++], GL.UNSIGNED_SHORT, args[p++], args[p++]);
 	}
 
 	override function end() {

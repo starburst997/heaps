@@ -93,6 +93,7 @@ class Dce {
 
 		for( v in used ) {
 			if( v.used ) continue;
+			if( v.v.kind == VarKind.Input) continue;
 			vertex.vars.remove(v.v);
 			fragment.vars.remove(v.v);
 		}
@@ -185,6 +186,15 @@ class Dce {
 			} else {
 				link(channelVars[cid], writeTo);
 			}
+		case TCall({ e : TGlobal(ChannelReadLod) }, [{ e : TVar(c) }, uv, lod, { e : TConst(CInt(cid)) }]):
+			check(uv, writeTo, isAffected);
+			check(lod, writeTo, isAffected);
+			if( channelVars[cid] == null ) {
+				channelVars[cid] = c;
+				link(c, writeTo);
+			} else {
+				link(channelVars[cid], writeTo);
+			}
 		default:
 			e.iter(check.bind(_, writeTo, isAffected));
 		}
@@ -218,7 +228,10 @@ class Dce {
 			return { e : TConst(CNull), t : e.t, p : e.p };
 		case TCall({ e : TGlobal(ChannelRead) }, [_, uv, { e : TConst(CInt(cid)) }]):
 			var c = channelVars[cid];
-			return { e : TCall({ e : TGlobal(Texture), p : e.p, t : TVoid }, [{ e : TVar(c), t : c.type, p : e.p }, uv]), t : TVoid, p : e.p };
+			return { e : TCall({ e : TGlobal(Texture), p : e.p, t : TVoid }, [{ e : TVar(c), t : c.type, p : e.p }, mapExpr(uv,true)]), t : TVoid, p : e.p };
+		case TCall({ e : TGlobal(ChannelReadLod) }, [_, uv, lod, { e : TConst(CInt(cid)) }]):
+			var c = channelVars[cid];
+			return { e : TCall({ e : TGlobal(TextureLod), p : e.p, t : TVoid }, [{ e : TVar(c), t : c.type, p : e.p }, mapExpr(uv,true), mapExpr(lod,true)]), t : TVoid, p : e.p };
 		case TIf(e, econd, eelse):
 			var e = mapExpr(e, true);
 			var econd = mapExpr(econd, isVar);

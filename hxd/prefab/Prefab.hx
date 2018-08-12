@@ -144,8 +144,7 @@ class Prefab {
 		p.name = v.name;
 		if(v.enabled != null)
 			p.enabled = v.enabled;
-		if(v.props != null)
-			p.props = Reflect.copy(v.props);  // TODO: Recursive?
+		p.props = v.props;
 		if( v.source != null )
 			p.source = v.source;
 		p.load(v);
@@ -192,8 +191,10 @@ class Prefab {
 	public function getOpt<T:Prefab>( cl : Class<T>, ?name : String ) : T {
 		var parts = name == null ? null : name.split(".");
 		for( c in children ) {
-			if( (name == null || c.name == name) && Std.is(c, cl) )
-				return cast c;
+			if( (name == null || c.name == name) ) {
+				var cval = c.to(cl);
+				if( cval != null ) return cval;
+			}
 			if( parts != null && parts.length > 1 && c.name == parts[0] ) {
 				parts.shift();
 				return c.getOpt(cl, parts.join("."));
@@ -216,7 +217,7 @@ class Prefab {
 		if(arr == null)
 			arr = [];
 		for(c in children) {
-			var i = Std.instance(c, cl);
+			var i = c.to(cl);
 			if(i != null)
 				arr.push(i);
 			c.getAll(cl, arr);
@@ -230,7 +231,7 @@ class Prefab {
 		if( cl == null )
 			arr.push(cast this);
 		else {
-			var i = Std.instance(this, cl);
+			var i = to(cl);
 			if(i != null)
 				arr.push(i);
 		}
@@ -242,7 +243,7 @@ class Prefab {
 	public function getParent<T:Prefab>( c : Class<T> ) : Null<T> {
 		var p = parent;
 		while(p != null) {
-			var inst = Std.instance(p, c);
+			var inst = p.to(c);
 			if(inst != null) return inst;
 			p = p.parent;
 		}
@@ -270,5 +271,10 @@ class Prefab {
 			return f;
 		}
 		return type.split(".").pop();
+	}
+
+	public function clone() : Prefab {
+		var obj = saveRec();
+		return loadRec(haxe.Json.parse(haxe.Json.stringify(obj)));
 	}
 }

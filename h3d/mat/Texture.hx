@@ -106,7 +106,8 @@ class Texture {
 			if( this.flags.has(f) )
 				flags.push(f);
 		var t = new Texture(width, height, flags, format, allocPos);
-		h3d.pass.Copy.run(this, t);
+		if(this.flags.has(Cube)) h3d.pass.CubeCopy.run(this, t);
+		else h3d.pass.Copy.run(this, t);
 		lastFrame = old;
 		return t;
 	}
@@ -261,7 +262,8 @@ class Texture {
 		if( t != null ) {
 			mem.deleteTexture(this);
 			#if debug
-			this.allocPos.customParams = ["#DISPOSED"];
+			if(this.allocPos != null)
+				this.allocPos.customParams = ["#DISPOSED"];
 			#end
 		}
 	}
