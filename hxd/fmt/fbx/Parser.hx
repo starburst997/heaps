@@ -23,8 +23,7 @@ class Parser {
 	var pos : Int;
 	var token : Null<Token>;
 	var binary : Bool;
-	var fbxVersion:Int;
-	
+
 	function new() {
 	}
 
@@ -50,19 +49,17 @@ class Parser {
 		token = null;
 		if (this.binary) {
 			// Skip header, magic [0x1A, 0x00] and version number.
-			fbxVersion = bytes.getInt32(0x17);
-			
 			this.pos = 21 + 2 + 4;
-			var firstNode = parseBinaryNode(getVersionedInt32());
+			var firstNode = parseBinaryNode(getInt32());
 			if (firstNode.name != "") {
 				
 				// Root was omitted, read until all data obtained.
 				var nodes : Array<FbxNode> = [firstNode];
-				var size:Int = getVersionedInt32();
+				var size:Int = getInt32();
 				
 				while (size != 0) {
 					nodes.push(parseBinaryNode(size));
-					size = getVersionedInt32();
+					size = getInt32();
 				}
 				
 				return {
@@ -148,6 +145,7 @@ class Parser {
 					}
 				}
 				props.push(floats == null ? PInts(ints) : PFloats(floats));
+				if (peek()==TColon) except(TColon); // Allow trailing ,
 				except(TBraceClose);
 				break;
 			default:
@@ -173,18 +171,18 @@ class Parser {
 	}
 	
 	function parseBinaryNodes( output : Array<FbxNode> ) {
-		var size : Int = getVersionedInt32();
+		var size : Int = getInt32();
 		while (size != 0)
 		{
 			output.push(parseBinaryNode(size));
-			size = getVersionedInt32();
+			size = getInt32();
 		}
 	}
 	
 	function parseBinaryNode( nextRecord : Int ) : FbxNode {
 		
-		var numProperties : Int = getVersionedInt32();
-		var propertyListLength : UInt = getVersionedInt32();
+		var numProperties : Int = getInt32();
+		var propertyListLength : UInt = getInt32();
 		var nameLen : Int = getByte();
 		var name : String = (nameLen == 0 ? "" : bytes.getString(pos, nameLen));
 		pos += nameLen;
@@ -356,14 +354,7 @@ class Parser {
 	inline function nextChar() {
 		return StringTools.fastCodeAt(buf, pos++);
 	}
-	
-	inline function getVersionedInt32() {
-		var i : Int = bytes.getInt32(pos);
-		// No support for file sizes over Int32.
-		pos += fbxVersion >= 7500 ? 8 : 4;
-		return i;
-	}
-	
+
 	inline function getInt32() {
 		var i : Int = bytes.getInt32(pos);
 		pos += 4;

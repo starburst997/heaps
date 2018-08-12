@@ -171,7 +171,6 @@ class Stage {
 			curMouseY = Std.int(e.mouseY * get_height() / 100);
 			eh = new Event(ERelease,curMouseX,curMouseY, haxe.Int64.make(e.fingerIdHigh, e.fingerIdLow));
 		case TouchMove:
-			//trace('TOUCH MOVE', e.fingerId);
 			curMouseX = Std.int(e.mouseX * get_width() / 100);
 			curMouseY = Std.int(e.mouseY * get_height() / 100);
 			eh = new Event(EMove,curMouseX,curMouseY, haxe.Int64.make(e.fingerIdHigh, e.fingerIdLow));

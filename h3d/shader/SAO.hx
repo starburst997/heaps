@@ -1,5 +1,9 @@
 package h3d.shader;
 
+/**
+	Screen space ambient occlusion.
+	Uses "Scalable Ambient Obscurance" [McGuire12]
+**/
 class SAO extends ScreenShader {
 
 	static var SRC = {
@@ -44,7 +48,7 @@ class SAO extends ScreenShader {
 
 		function getPosition( uv : Vec2 ) : Vec3 {
 			var depth = depthTexture.get(uv);
-			var uv2 = (uv - 0.5) * vec2(2, -2);
+			var uv2 = uvToScreen(uv);
 			var temp = vec4(uv2, depth, 1) * cameraInverseViewProj;
 			var originWS = temp.xyz / temp.w;
 			return originWS;
@@ -67,7 +71,7 @@ class SAO extends ScreenShader {
 				occlusion += sampleAO(vUV, origin, normal, radiusSS, i, randomPatternRotationAngle);
 
 			occlusion = 1.0 - occlusion / float(numSamples);
-			occlusion = clamp(pow(occlusion, 1.0 + intensity), 0.0, 1.0);
+			occlusion = pow(occlusion, 1.0 + intensity).saturate();
 
 			output.color = vec4(occlusion.xxx, 1.);
 		}
