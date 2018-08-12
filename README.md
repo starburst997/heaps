@@ -1,6 +1,8 @@
 # Heaps  
 _High Performance Game Framework_
 
+JD Special Deluxe Branch for iOS / Android
+
 [![Build Status](https://travis-ci.org/HeapsIO/heaps.svg?branch=master)](https://travis-ci.org/HeapsIO/heaps)
 
 [![Heaps.io logo](https://raw.githubusercontent.com/HeapsIO/heaps.io/master/assets/logo/logo-heaps-color.png)](http://heaps.io)
