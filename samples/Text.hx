@@ -2,10 +2,10 @@ import h2d.Drawable;
 import h2d.Flow;
 import h2d.Font;
 import h2d.Graphics;
-import h2d.Sprite;
+import h2d.Object;
 import h2d.Text.Align;
 
-class TextWidget extends Sprite
+class TextWidget extends Object
 {
 	public var align: Align;
 	public var textField: h2d.Text;
@@ -105,8 +105,8 @@ class Text extends hxd.App {
 		}
 
 		// Flows
-		function createText(parent:Sprite, str : String, align:Align) {
-			var tf = new h2d.Text(font, parent);
+		function createText(parent:Object, str : String, align:Align, ?forceFont:h2d.Font) {
+			var tf = new h2d.Text(forceFont != null ? forceFont : font, parent);
 			tf.textColor = 0xffffff;
 			tf.textAlign = align;
 			tf.text = str;
@@ -114,7 +114,7 @@ class Text extends hxd.App {
 			return tf;
 		}
 
-		function createFlow(parent:Sprite) {
+		function createFlow(parent:Object) {
 			var flow = new Flow(parent);
 			flow.debug = true;
 			flow.horizontalSpacing = 5;
@@ -183,6 +183,30 @@ class Text extends hxd.App {
 			createText(f1, multilineText, Align.Left);
 			var f2 = createFlow(flow);
 			createText(f2, multilineText, Align.Left);
+		}
+		
+		yoffset += flow.getBounds().height + 10;
+		
+		// Showcases all supported font formats.
+		var flow = createFlow(s2d);
+		flow.debug = false;
+		flow.y = yoffset;
+		flow.x = 10;
+		flow.horizontalAlign = FlowAlign.Left;
+		flow.isVertical = true;
+		{
+			var tf = createText(flow, "BMFont XML format (Littera export)", Align.Left, hxd.Res.littera_xml.toFont());
+			tf.maxWidth = 400;
+			tf = createText(flow, "BMFont XML format (BMFont export)", Align.Left, hxd.Res.bmfont_xml.toFont());
+			tf.maxWidth = 400;
+			tf = createText(flow, "BMFont text format (Littera export)", Align.Left, hxd.Res.littera_text.toFont());
+			tf.maxWidth = 400;
+			tf = createText(flow, "BMFont text format (BMFont export)", Align.Left, hxd.Res.bmfont_text.toFont());
+			tf.maxWidth = 400;
+			tf = createText(flow, "BMFont Binary format", Align.Left, hxd.Res.bmfont_binary.toFont());
+			tf.maxWidth = 400;
+			tf = createText(flow, "FontBuilder Divo format", Align.Left, hxd.Res.customFont.toFont());
+			tf.maxWidth = 400;
 		}
 
 		onResize();

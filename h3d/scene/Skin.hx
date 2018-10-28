@@ -93,8 +93,8 @@ class Skin extends MultiMaterial {
 		return s;
 	}
 
-	override function getBounds( ?b : h3d.col.Bounds, rec = false ) {
-		b = super.getBounds(b, rec);
+	override function getBoundsRec( b : h3d.col.Bounds ) {
+		b = super.getBoundsRec(b);
 		var tmp = primitive.getBounds().clone();
 		var b0 = skinData.allJoints[0];
 		// not sure if that's the good joint
@@ -271,7 +271,7 @@ class Skin extends MultiMaterial {
 		}
 	}
 
-	#if hxbit
+	#if (hxbit && !macro && heaps_enable_serialize)
 	override function customUnserialize(ctx:hxbit.Serializer) {
 		super.customUnserialize(ctx);
 		var prim = Std.instance(primitive, h3d.prim.HMDModel);

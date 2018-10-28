@@ -127,6 +127,19 @@ class Renderer extends h3d.scene.Renderer {
 		draw("overlay");
 	}
 
+	function drawShadows(){
+		var light = @:privateAccess ctx.lights;
+		var passes = get("shadow");
+		while( light != null ) {
+			var plight = Std.instance(light, h3d.scene.pbr.Light);
+			if( plight != null ) {
+				plight.shadows.setContext(ctx);
+				plight.shadows.draw(passes);
+			}
+			light = light.next;
+		}
+	}
+
 	function apply( step : hxd.prefab.rfx.RendererFX.Step ) {
 		for( f in effects )
 			if( f.enabled )
@@ -150,16 +163,7 @@ class Renderer extends h3d.scene.Renderer {
 		var props : RenderProps = props;
 		var ls = getLightSystem();
 
-		var light = @:privateAccess ctx.lights;
-		var passes = get("shadow");
-		while( light != null ) {
-			var plight = Std.instance(light, h3d.scene.pbr.Light);
-			if( plight != null ) {
-				plight.shadows.setContext(ctx);
-				plight.shadows.draw(passes);
-			}
-			light = light.next;
-		}
+		drawShadows();
 
 		var albedo = allocTarget("albedo");
 		var normal = allocTarget("normalDepth",false,1.,RGBA16F);
@@ -266,20 +270,17 @@ class Renderer extends h3d.scene.Renderer {
 			return;
 		}
 
-		ctx.extraShaders = new hxsl.ShaderList(pbrProps, null);
+		pbrIndirect.drawIndirectDiffuse = false;
+		pbrIndirect.drawIndirectSpecular = true;
+		ctx.extraShaders = new hxsl.ShaderList(pbrProps, new hxsl.ShaderList(pbrIndirect, null));
 		draw("volumetricLightmap");
 		ctx.extraShaders = null;
 
 		pbrProps.isScreen = true;
 
-		pbrIndirect.drawIndirectDiffuse = false;
-		pbrIndirect.drawIndirectSpecular = true;
-		pbrOut.pass.stencil.setFunc(Always);
-		pbrOut.render();
-
 		pbrIndirect.showSky = false;
 		pbrIndirect.drawIndirectDiffuse = true;
-		pbrIndirect.drawIndirectSpecular = false;
+		pbrIndirect.drawIndirectSpecular = true;
 		pbrOut.pass.stencil.setFunc(NotEqual, 0x80, 0x80, 0x80);
 		pbrOut.render();
 
@@ -318,22 +319,22 @@ class Renderer extends h3d.scene.Renderer {
 
 			if( !hasDebugEvent ) {
 				hasDebugEvent = true;
-				hxd.Stage.getInstance().addEventTarget(onEvent);
+				hxd.Window.getInstance().addEventTarget(onEvent);
 			}
 
 		}
 
 		if( hasDebugEvent && displayMode != Debug ) {
 			hasDebugEvent = false;
-			hxd.Stage.getInstance().removeEventTarget(onEvent);
+			hxd.Window.getInstance().removeEventTarget(onEvent);
 		}
 	}
 
 	function onEvent(e:hxd.Event) {
 		if( e.kind == EPush && e.button == 2 ) {
-			var st = hxd.Stage.getInstance();
-			var x = Std.int((e.relX / st.width) * 4);
-			var y = Std.int((e.relY / st.height) * 4);
+			var win = hxd.Window.getInstance();
+			var x = Std.int((e.relX / win.width) * 4);
+			var y = Std.int((e.relY / win.height) * 4);
 			if( slides.shader.mode != Full ) {
 				slides.shader.mode = Full;
 			} else {
@@ -382,7 +383,7 @@ class Renderer extends h3d.scene.Renderer {
 		env.power = props.envPower;
 	}
 
-	#if js
+	#if editor
 	override function editProps() {
 		var props : RenderProps = props;
 		return new js.jquery.JQuery('

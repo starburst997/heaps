@@ -20,6 +20,14 @@ class Loader {
 		cache = new Map();
 	}
 
+	public function dir( path : String ) : Array<Any> {
+		var r : Array<Any> = [];
+		var entries = fs.dir(path);
+		for(e in entries)
+			r.push(new Any(this, e));
+		return r;
+	}
+
 	public function exists( path : String ) : Bool {
 		return fs.exists(path);
 	}
@@ -37,6 +45,9 @@ class Loader {
 			res = Type.createInstance(c, [entry]);
 			currentInstance = old;
 			cache.set(path, res);
+		} else {
+			if( Std.instance(res,c) == null )
+				throw path+" has been reintrepreted from "+Type.getClass(res)+" to "+c;
 		}
 		return res;
 	}

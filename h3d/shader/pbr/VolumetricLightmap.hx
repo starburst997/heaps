@@ -80,9 +80,6 @@ class VolumetricLightmap extends hxsl.Shader {
 		}
 
 		@const var ORDER : Int;
-		@const(327676) var SIZE : Int;
-
-		@param var lightProbeBuffer : Buffer<Vec4,SIZE>;
 		@param var lightProbeTexture : Sampler2D;
 		@param var lightmapInvPos : Mat4;
 		@param var lightmapSize : Vec3;
@@ -156,7 +153,7 @@ class VolumetricLightmap extends hxsl.Shader {
 			var F = F0 + (max(vec3(1 - roughness), F0) - F0) * exp2( ( -5.55473 * NdV - 6.98316) * NdV );
 			var indirect = (irradiance * (1 - metalness) * (1 - F) ) * strength;
 
-			output.color = vec4(indirect, 1.0);
+			output.color.rgb += indirect;
 		}
 	}
 }

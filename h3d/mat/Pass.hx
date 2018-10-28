@@ -2,7 +2,9 @@ package h3d.mat;
 import h3d.mat.Data;
 
 @:allow(h3d.mat.BaseMaterial)
+#if !macro
 @:build(hxd.impl.BitsBuilder.build())
+#end
 class Pass implements hxd.impl.Serializable {
 
 	@:s public var name(default, null) : String;
@@ -35,9 +37,13 @@ class Pass implements hxd.impl.Serializable {
 	@:bits(bits) public var blendAlphaDst : Blend;
 	@:bits(bits) public var blendOp : Operation;
 	@:bits(bits) public var blendAlphaOp : Operation;
+	@:bits(bits) public var wireframe : Bool;
 	public var colorMask : Int;
 
 	@:s public var stencil : Stencil;
+
+	// one bit for internal engine usage
+	@:bits(bits) @:noCompletion var reserved : Bool;
 
 	public function new(name, ?shaders, ?parent) {
 		this.parentPass = parent;
@@ -86,22 +92,63 @@ class Pass implements hxd.impl.Serializable {
 
 	public function setBlendMode( b : BlendMode ) {
 		switch( b ) {
-		case None:
+		case None: // Out = 1 * Src + 0 * Dst
 			blend(One, Zero);
-		case Alpha:
+			blendOp = Add;
+			blendAlphaOp = Add;
+		case Alpha: // Out = SrcA * Src + (1 - SrcA) * Dst
 			blend(SrcAlpha, OneMinusSrcAlpha);
-		case Add:
+			blendOp = Add;
+			blendAlphaOp = Add;
+		case Add: // Out = SrcA * Src + 1 * Dst
 			blend(SrcAlpha, One);
-		case AlphaAdd:
+			blendOp = Add;
+			blendAlphaOp = Add;
+		case AlphaAdd: // Out = Src + (1 - SrcA) * Dst
 			blend(One, OneMinusSrcAlpha);
-		case SoftAdd:
+			blendOp = Add;
+			blendAlphaOp = Add;
+		case SoftAdd: // Out = (1 - Dst) * Src + 1 * Dst
 			blend(OneMinusDstColor, One);
-		case Multiply:
+			blendOp = Add;
+			blendAlphaOp = Add;
+		case Multiply: // Out = Dst * Src + 0 * Dst
 			blend(DstColor, Zero);
-		case Erase:
+			blendOp = Add;
+			blendAlphaOp = Add;
+		case Erase: // Out = 0 * Src + (1 - Srb) * Dst
 			blend(Zero, OneMinusSrcColor);
-		case Screen:
+			blendOp = Add;
+			blendAlphaOp = Add;
+		case Screen: // Out = 1 * Src + (1 - Srb) * Dst
 			blend(One, OneMinusSrcColor);
+			blendOp = Add;
+			blendAlphaOp = Add;
+		case Sub: // Out = 1 * Dst - SrcA * Src
+			blend(SrcAlpha, One);
+			blendOp = ReverseSub;
+			blendAlphaOp = ReverseSub;
+
+		// The output color min/max of the source and dest colors.
+		// The blend parameters Src and Dst are ignored for this equation.
+		case Max: // Out = MAX( Src, Dst )
+			blendSrc = Zero;
+			blendAlphaSrc = Zero;
+			blendDst = Zero;
+			blendAlphaDst = Zero;
+			blendAlphaSrc = Zero;
+			blendAlphaDst = Zero;
+			blendAlphaOp = Max;
+			blendOp = Max;
+		case Min: // Out = MIN( Src, Dst )
+			blendSrc = Zero;
+			blendAlphaSrc = Zero;
+			blendDst = Zero;
+			blendAlphaDst = Zero;
+			blendAlphaSrc = Zero;
+			blendAlphaDst = Zero;
+			blendAlphaOp = Min;
+			blendOp = Min;
 		}
 	}
 
@@ -190,8 +237,6 @@ class Pass implements hxd.impl.Serializable {
 	public function getShaderByName( name : String ) : hxsl.Shader {
 		var s = shaders;
 		while( s != parentShaders ) {
-			if( Std.is(s.s, hxsl.DynamicShader) )
-				trace(@:privateAccess s.s.shader.data.name);
 			if( @:privateAccess s.s.shader.data.name == name )
 				return s.s;
 			s = s.next;
@@ -228,6 +273,7 @@ class Pass implements hxd.impl.Serializable {
 		return p;
 	}
 
+	#if !macro
 	public function getDebugShaderCode( scene : h3d.scene.Scene, toHxsl = true ) {
 		var shader = scene.renderer.debugCompileShader(this);
 		if( toHxsl ) {
@@ -237,7 +283,7 @@ class Pass implements hxd.impl.Serializable {
 			return h3d.Engine.getCurrent().driver.getNativeShaderCode(shader);
 		}
 	}
-
+	
 	#if hxbit
 
 	public function customSerialize( ctx : hxbit.Serializer ) {
@@ -266,6 +312,8 @@ class Pass implements hxd.impl.Serializable {
 		setPassName(name);
 		loadBits(bits);
 	}
+	#end
+
 	#end
 
 }

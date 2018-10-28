@@ -12,10 +12,44 @@ import dx.GameController;
 private typedef Event = {
 }
 private class GameController {
+	public static var NUM_AXES = 0;
+	public static var NUM_BUTTONS = 0;
+	public static var CONFIG : Dynamic = {};
 	public var name : String;
+	public var index : Int;
+	public function getButtons() return 0;
+	public function getAxis(i:Int) return 0;
+	public function update() {}
+	public function rumble( strength : Float, time : Float ) {}
+	public static function init() {}
+	public static function detect(_) {}
 }
 #end
 #end
+
+typedef PadConfig = {
+	analogX : Int,
+	analogY : Int,
+	ranalogX : Int,
+	ranalogY : Int,
+	A : Int,
+	B : Int,
+	X : Int,
+	Y : Int,
+	LB : Int,
+	RB : Int,
+	LT : Int,
+	RT : Int,
+	back : Int,
+	start : Int,
+	analogClick : Int,
+	ranalogClick : Int,
+	dpadUp : Int,
+	dpadDown : Int,
+	dpadLeft : Int,
+	dpadRight : Int,
+	names : Array<String>,
+}
 
 class Pad {
 
@@ -107,7 +141,7 @@ class Pad {
 	public static var ANALOG_BUTTON_THRESHOLDS = { press: 0.3, release: 0.25 };
 	#end
 
-	public static var DEFAULT_CONFIG =
+	public static var DEFAULT_CONFIG : PadConfig =
 		#if hlsdl CONFIG_SDL
 		#elseif flash CONFIG_XBOX
 		#elseif (hldx || usesys) GameController.CONFIG
@@ -378,7 +412,7 @@ class Pad {
 			default:
 		}
 	}
-	
+
 	static function syncPads(){
 		for( p in pads )
 			for( i in 0...p.buttons.length )

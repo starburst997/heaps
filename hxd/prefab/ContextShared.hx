@@ -8,7 +8,7 @@ typedef ShaderDef = {
 typedef ShaderDefCache = Map<String, ShaderDef>;
 
 class ContextShared {
-	public var root2d : h2d.Sprite;
+	public var root2d : h2d.Object;
 	public var root3d : h3d.scene.Object;
 	public var contexts : Map<Prefab,Context>;
 	public var references : Map<Prefab,Array<Context>>;
@@ -20,7 +20,7 @@ class ContextShared {
 	var bakedData : Map<String, haxe.io.Bytes>;
 
 	public function new() {
-		root2d = new h2d.Sprite();
+		root2d = new h2d.Object();
 		root3d = new h3d.scene.Object();
 		contexts = new Map();
 		references = new Map();
@@ -45,6 +45,26 @@ class ContextShared {
 		if(ctxs != null)
 			return ret.concat(ctxs);
 		return ret;
+	}
+
+	public function loadDir(p : String, ?dir : String ) : Array<hxd.res.Any> {
+		var datPath = new haxe.io.Path(currentPath);
+		datPath.ext = "dat";
+		var path = datPath.toString() + "/" + p;
+		if(dir != null) path += "/" + dir;
+		return try hxd.res.Loader.currentInstance.dir(path) catch( e : hxd.res.NotFound ) null;
+	}
+
+	public function loadPrefabDat(file : String, ext : String, p : String) : hxd.res.Any {
+		var datPath = new haxe.io.Path(currentPath);
+		datPath.ext = "dat";
+		var path = new haxe.io.Path(datPath.toString() + "/" + p + "/" + file);
+		path.ext = ext;
+		return try hxd.res.Loader.currentInstance.load(path.toString()) catch( e : hxd.res.NotFound ) null;
+	}
+
+	public function savePrefabDat(file : String, ext : String, p : String, bytes : haxe.io.Bytes ) {
+		throw "Not implemented";
 	}
 
 	public function loadPrefab( path : String ) : Prefab {
@@ -75,6 +95,10 @@ class ContextShared {
 
 	public function loadTexture( path : String ) {
 		return cache.loadTexture(null, path);
+	}
+
+	public function loadBytes( file : String) : haxe.io.Bytes {
+		return try hxd.res.Loader.currentInstance.load(file).entry.getBytes() catch( e : hxd.res.NotFound ) null;
 	}
 
 	public function loadBakedBytes( file : String ) {
@@ -113,6 +137,10 @@ class ContextShared {
 			bytes.writeByte(0xFE); // stop
 		}
 		saveBakedFile(bytes.getBytes());
+	}
+
+	public function saveTexture( file : String, bytes : haxe.io.Bytes , dir : String, ext : String) {
+		throw "Don't know how to save texture";
 	}
 
 	function saveBakedFile( bytes : haxe.io.Bytes ) {

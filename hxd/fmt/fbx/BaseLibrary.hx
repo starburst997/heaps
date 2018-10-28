@@ -3,6 +3,12 @@ import haxe.io.Bytes;
 using hxd.fmt.fbx.Data;
 import h3d.col.Point;
 
+#if (haxe_ver < 4)
+import haxe.xml.Fast in Access;
+#else
+import haxe.xml.Access;
+#end
+
 class TmpObject {
 	public var index : Int;
 	public var model : FbxNode;
@@ -180,12 +186,12 @@ class BaseLibrary {
 						switch( pname ) {
 						case "UV" if( pval != "" ):
 							var xml = try Xml.parse(pval) catch( e : Dynamic ) throw "Invalid UV data in " + m.getName();
-							var frames = [for( f in new haxe.xml.Fast(xml.firstElement()).elements ) { var f = f.innerData.split(" ");  { t : Std.parseFloat(f[0]) * 9622116.25, u : Std.parseFloat(f[1]), v : Std.parseFloat(f[2]) }} ];
+							var frames = [for( f in new Access(xml.firstElement()).elements ) { var f = f.innerData.split(" ");  { t : Std.parseFloat(f[0]) * 9622116.25, u : Std.parseFloat(f[1]), v : Std.parseFloat(f[2]) }} ];
 							if( uvAnims == null ) uvAnims = new Map();
 							uvAnims.set(m.getName(), frames);
 						case "Events":
 							var xml = try Xml.parse(pval) catch( e : Dynamic ) throw "Invalid Events data in " + m.getName();
-							animationEvents = [for( f in new haxe.xml.Fast(xml.firstElement()).elements ) { var f = f.innerData.split(" ");  { frame : Std.parseInt(f.shift()), data : StringTools.trim(f.join(" ")) }} ];
+							animationEvents = [for( f in new Access(xml.firstElement()).elements ) { var f = f.innerData.split(" ");  { frame : Std.parseInt(f.shift()), data : StringTools.trim(f.join(" ")) }} ];
 						default:
 						}
 					}
@@ -753,7 +759,8 @@ class BaseLibrary {
 		case 1:
 			animNodes[0];
 		default:
-			throw "Multiple animation layers curves are currently not supported";
+			trace("Multiple animation layers curves are currently not supported");
+			animNodes[0];
 		}
 
 		if( animNode == null ) {
@@ -867,7 +874,7 @@ class BaseLibrary {
 				case "d|Y": data.y = values;
 				case "d|Z": data.z = values;
 				default:
-					throw "Unsupported key name "+cname;
+					trace("Unsupported key name "+cname);
 				}
 			}
 
@@ -894,7 +901,8 @@ class BaseLibrary {
 			case "S":
 				if( c.def.scale == null ) P1 else c.def.scale;
 			default:
-				throw "Unknown curve " + model.getName()+"."+cname;
+				trace("Unknown curve " + model.getName()+"."+cname);
+				continue;
 			}
 			var hasValue = false;
 			if( data.x != null && roundValues(data.x, def.x, M) )

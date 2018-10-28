@@ -11,7 +11,7 @@ enum FlowAlign {
 @:allow(h2d.Flow)
 class FlowProperties {
 
-	var elt : Sprite;
+	var elt : Object;
 
 	public var paddingLeft = 0;
 	public var paddingTop = 0;
@@ -54,9 +54,9 @@ class FlowProperties {
 
 }
 
-class Flow extends Sprite {
+class Flow extends Object {
 
-	static var tmpBounds = new h2d.col.Bounds();
+	var tmpBounds = new h2d.col.Bounds();
 
 	/**
 		If some sub element gets resized, you need to set reflow to true in order to force
@@ -189,7 +189,7 @@ class Flow extends Sprite {
 	/**
 		Get the per-element properties. Returns null if the element is not currently part of the flow.
 	**/
-	public function getProperties( e : h2d.Sprite ) {
+	public function getProperties( e : h2d.Object ) {
 		needReflow = true; // properties might be changed
 		return properties[getChildIndex(e)];
 	}
@@ -335,7 +335,7 @@ class Flow extends Sprite {
 		updateConstraint();
 	}
 
-	override function contentChanged( s : Sprite ) {
+	override function contentChanged( s : Object ) {
 		while( s.parent != this )
 			s = s.parent;
 		if( getProperties(s).isAbsolute )
@@ -392,7 +392,7 @@ class Flow extends Sprite {
 		s.setParentContainer(this);
 	}
 
-	override public function removeChild(s:Sprite) {
+	override public function removeChild(s:Object) {
 		var index = getChildIndex(s);
 		super.removeChild(s);
 		if( index >= 0 ) {
@@ -555,7 +555,6 @@ class Flow extends Sprite {
 			cw = x;
 			var maxLineHeight = 0;
 			var minLineHeight = this.lineHeight != null ? lineHeight : (this.minHeight != null && !multiline) ? (this.minHeight - (paddingTop + paddingBottom + borderHeight * 2)) : 0;
-			var tmpBounds = tmpBounds;
 			var lastIndex = 0;
 
 			inline function alignLine( maxIndex ) {
@@ -675,7 +674,6 @@ class Flow extends Sprite {
 			ch = y;
 			var maxColWidth = 0;
 			var minColWidth = this.colWidth != null ? colWidth : (this.minWidth != null && !multiline) ? (this.minWidth - (paddingLeft + paddingRight + borderWidth * 2)) : 0;
-			var tmpBounds = tmpBounds;
 			var lastIndex = 0;
 
 			inline function alignLine( maxIndex ) {

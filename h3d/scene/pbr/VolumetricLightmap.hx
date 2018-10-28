@@ -11,6 +11,8 @@ class VolumetricLightmap extends h3d.scene.Mesh {
 
 	public var lastBakedProbeIndex = -1;
 
+	var prim : h3d.prim.Cube;
+
 	var shader : h3d.shader.pbr.VolumetricLightmap;
 
 	function set_voxelSize(newSize) :h3d.Vector {
@@ -20,7 +22,9 @@ class VolumetricLightmap extends h3d.scene.Mesh {
 	}
 
 	public function new(?parent) {
-		super(new h3d.prim.Cube(1,1,1,false), null, parent);
+		var prim = new h3d.prim.Cube(1,1,1,false);
+		prim.addNormals();
+		super(prim, null, parent);
 		shader = new h3d.shader.pbr.VolumetricLightmap();
 		material.mainPass.removeShader(material.mainPass.getShader(h3d.shader.pbr.PropsValues));
 		material.mainPass.addShader(shader);
@@ -132,7 +136,6 @@ class VolumetricLightmap extends h3d.scene.Mesh {
 			return;
 		var scale = absPos.getScale();
 		shader.ORDER = shOrder;
-		shader.SIZE = getProbeCount() * shader.ORDER * shader.ORDER;
 		shader.lightmapInvPos.load(getInvPos());
 		shader.lightmapSize.load(new h3d.Vector(probeCount.x, probeCount.y, probeCount.z));
 		shader.voxelSize.load(new h3d.Vector(scale.x/(probeCount.x - 1), scale.y/(probeCount.y - 1), scale.z/(probeCount.z - 1)));

@@ -6,7 +6,7 @@ import hxd.Key in K;
 #end
 
 //@:coreApi
-class Stage {
+class Window {
 
 	var resizeEvents : List<Void -> Void>;
 	var eventTargets : List<Event -> Void>;
@@ -17,6 +17,7 @@ class Stage {
 	public var mouseY(get, never) : Int;
 	public var mouseLock(get, set) : Bool;
 	public var vsync(get, set) : Bool;
+	public var isFocused(get, never) : Bool;
 
 	#if hlsdl
 	var window : sdl.Window;
@@ -128,6 +129,8 @@ class Stage {
 		return b;
 	}
 
+	function get_isFocused() : Bool return !wasBlurred;
+
 	var wasBlurred : Bool;
 
 	function onEvent( e : #if hldx dx.Event #else sdl.Event #end ) : Bool {
@@ -135,16 +138,30 @@ class Stage {
 		switch( e.type ) {
 		case WindowState:
 			switch( e.state ) {
-				case Resize:
-					windowWidth = window.width;
-					windowHeight = window.height;
-					onResize(null);
-				case Focus:
-					#if hldx
-					// return to exclusive mode
-					if( window.displayMode == Fullscreen && wasBlurred ) {
-						window.displayMode = Borderless;
-						window.displayMode = Fullscreen;
+			case Resize:
+				windowWidth = window.width;
+				windowHeight = window.height;
+				onResize(null);
+			case Focus:
+				#if hldx
+				// return to exclusive mode
+				if( window.displayMode == Fullscreen && wasBlurred ) {
+					window.displayMode = Borderless;
+					window.displayMode = Fullscreen;
+				}
+				#end
+				wasBlurred = false;
+				event(new Event(EFocus));
+			case Blur:
+				wasBlurred = true;
+				event(new Event(EFocusLost));
+				#if hldx
+				// release all keys
+				var ev = new Event(EKeyUp);
+				for( i in 0...@:privateAccess hxd.Key.keyPressed.length )
+					if( hxd.Key.isDown(i) ) {
+						ev.keyCode = i;
+						event(ev);
 					}
 					#end
 					wasBlurred = false;
@@ -328,6 +345,8 @@ class Stage {
 		return haxe.System.vsync = b;
 	}
 
+	function get_isFocused() : Bool return false;
+
 	#else
 
 	function get_vsync() : Bool return true;
@@ -336,10 +355,12 @@ class Stage {
 		return true;
 	}
 
+	function get_isFocused() : Bool return false;
+
 	#end
 
-	static var inst : Stage = null;
-	public static function getInstance() : Stage {
+	static var inst : Window = null;
+	public static function getInstance() : Window {
 		return inst;
 	}
 }

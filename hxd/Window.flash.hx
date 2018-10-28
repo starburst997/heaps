@@ -1,6 +1,6 @@
 package hxd;
 
-class Stage {
+class Window {
 
 	var resizeEvents : List<Void -> Void>;
 	var eventTargets : List<Event -> Void>;
@@ -11,6 +11,7 @@ class Stage {
 	public var mouseY(get, never) : Int;
 	public var mouseLock(get, set) : Bool;
 	public var vsync(get, set) : Bool;
+	public var isFocused(get, never) : Bool;
 
 	// FLASH
 	var stage : flash.display.Stage;
@@ -119,9 +120,9 @@ class Stage {
 		}
 	}
 
-	static var inst : Stage = null;
-	public static function getInstance() : Stage {
-		if( inst == null ) inst = new Stage();
+	static var inst : Window = null;
+	public static function getInstance() : Window {
+		if( inst == null ) inst = new Window();
 		return inst;
 	}
 
@@ -291,6 +292,7 @@ class Stage {
 		event(ev);
 	}
 
+	function get_isFocused() : Bool return false;
 
 }
 

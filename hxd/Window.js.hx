@@ -1,6 +1,6 @@
 package hxd;
 
-class Stage {
+class Window {
 
 	var resizeEvents : List<Void -> Void>;
 	var eventTargets : List<Event -> Void>;
@@ -11,6 +11,7 @@ class Stage {
 	public var mouseY(get, never) : Int;
 	public var mouseLock(get, set) : Bool;
 	public var vsync(get, set) : Bool;
+	public var isFocused(get, never) : Bool;
 
 	var curMouseX : Float = 0.;
 	var curMouseY : Float = 0.;
@@ -23,6 +24,8 @@ class Stage {
 	var curW : Int;
 	var curH : Int;
 
+	var focused = true;
+
 	public function new( ?canvas : js.html.CanvasElement, ?globalEvents ) : Void {
 		eventTargets = new List();
 		resizeEvents = new List();
@@ -31,6 +34,8 @@ class Stage {
 		if( canvas == null ) {
 			canvas = cast js.Browser.document.getElementById("webgl");
 			if( canvas == null ) throw "Missing canvas #webgl";
+			if( canvas.getAttribute("globalEvents") == "0" )
+				element = canvas;
 		}
 		this.canvas = canvas;
 		canvasPos = canvas.getBoundingClientRect();
@@ -44,6 +49,8 @@ class Stage {
 		element.addEventListener("keydown", onKeyDown);
 		element.addEventListener("keyup", onKeyUp);
 		element.addEventListener("keypress", onKeyPress);
+		element.addEventListener("blur", onFocus.bind(false));
+		element.addEventListener("focus", onFocus.bind(true));
 		if( element == canvas ) {
 			canvas.setAttribute("tabindex","1"); // allow focus
 			canvas.style.outline = 'none';
@@ -127,9 +134,9 @@ class Stage {
 		inst = this;
 	}
 
-	static var inst : Stage = null;
-	public static function getInstance() : Stage {
-		if( inst == null ) inst = new Stage();
+	static var inst : Window = null;
+	public static function getInstance() : Window {
+		if( inst == null ) inst = new Window();
 		return inst;
 	}
 
@@ -192,6 +199,7 @@ class Stage {
 	}
 
 	function onMouseWheel(e:js.html.WheelEvent) {
+		e.preventDefault();
 		var ev = new Event(EWheel, mouseX, mouseY);
 		ev.wheelDelta = e.deltaY / 120; // browser specific?
 		event(ev);
@@ -251,4 +259,10 @@ class Stage {
 		event(ev);
 	}
 
+	function onFocus(b: Bool) {
+		event(new Event(b ? EFocus : EFocusLost));
+		focused = b;
+	}
+
+	function get_isFocused() : Bool return focused;
 }

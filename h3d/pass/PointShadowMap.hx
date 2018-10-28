@@ -2,7 +2,6 @@ package h3d.pass;
 
 class PointShadowMap extends Shadows {
 
-	var lightCamera : h3d.Camera;
 	var customDepth : Bool;
 	var depth : h3d.mat.DepthBuffer;
 	var pshader : h3d.shader.PointShadow;
@@ -43,8 +42,8 @@ class PointShadowMap extends Shadows {
 		return true;
 	}
 
-	function getShadowProj() {
-		return lightCamera.m;
+	override function getShadowTex() {
+		return pshader.shadowMap;
 	}
 
 	override function setGlobals() {
@@ -162,11 +161,10 @@ class PointShadowMap extends Shadows {
 				mergePass.render();
 				ctx.engine.popTarget();
 			}
-
-			// To Do
-			//if( blur.radius > 0 && (mode != Mixed || !ctx.computingStatic) )
-				//blur.apply(ctx, texture);
 		}
+
+		if( blur.radius > 0 && (mode != Mixed || !ctx.computingStatic) )
+				blur.apply(ctx, texture);
 
 		if( mode == Mixed && !ctx.computingStatic )
 			texture = merge;
@@ -182,6 +180,7 @@ class PointShadowMap extends Shadows {
 		var texture = pshader.shadowMap;
 		if( staticTexture != null ) staticTexture.dispose();
 		staticTexture = texture.clone();
+		staticTexture.name = "StaticPointShadowMap";
 		pshader.shadowMap = staticTexture;
 	}
 }

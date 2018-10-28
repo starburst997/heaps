@@ -34,13 +34,12 @@ class Engine {
 	public var fullScreen(default, set) : Bool;
 
 	public var fps(get, never) : Float;
-	public var frameCount : Int = 0;
 
 	var realFps : Float;
 	var lastTime : Float;
 	var antiAlias : Int;
 	var tmpVector = new h3d.Vector();
-	var stage : hxd.Stage;
+	var window : hxd.Window;
 
 	var targetTmp : TargetTmp;
 	var targetStack : TargetTmp;
@@ -53,17 +52,19 @@ class Engine {
 	public var ready(default,null) = false;
 	@:allow(hxd.res) var resCache = new Map<{},Dynamic>();
 
-	@:access(hxd.Stage)
+	@:access(hxd.Window)
 	public function new( hardware = true, aa = 0 ) {
 		this.hardware = hardware;
 		this.antiAlias = aa;
 		this.autoResize = true;
 		fullScreen = !hxd.System.getValue(IsWindowed);
-		stage = hxd.Stage.getInstance();
+		window = hxd.Window.getInstance();
 		realFps = hxd.System.getDefaultFrameRate();
 		lastTime = haxe.Timer.stamp();
-		stage.addResizeEvent(onStageResize);
-		#if (js || cpp || hlsdl || usegl)
+		window.addResizeEvent(onWindowResize);
+		#if macro
+		driver = new h3d.impl.NullDriver();
+		#elseif (js || cpp || hlsdl || usegl)
 		driver = new h3d.impl.GlDriver(antiAlias);
 		#elseif flash
 		driver = new h3d.impl.Stage3dDriver(antiAlias);
@@ -220,8 +221,8 @@ class Engine {
 	function onCreate( disposed ) {
 		setCurrent();
 		if( autoResize ) {
-			width = stage.width;
-			height = stage.height;
+			width = window.width;
+			height = window.height;
 		}
 		if( disposed )
 			mem.onContextLost();
@@ -246,9 +247,9 @@ class Engine {
 	public dynamic function onReady() {
 	}
 
-	function onStageResize() {
+	function onWindowResize() {
 		if( autoResize && !driver.isDisposed() ) {
-			var w = stage.width, h = stage.height;
+			var w = window.width, h = window.height;
 			if( w != width || h != height )
 				resize(w, h);
 			onResized();
@@ -258,7 +259,7 @@ class Engine {
 	function set_fullScreen(v) {
 		fullScreen = v;
 		if( mem != null && hxd.System.getValue(IsWindowed) )
-			stage.setFullScreen(v);
+			window.setFullScreen(v);
 		return v;
 	}
 
@@ -278,16 +279,15 @@ class Engine {
 		if( driver.isDisposed() )
 			return false;
 		// init
-		frameCount++;
 		drawTriangles = 0;
 		shaderSwitches = 0;
 		drawCalls = 0;
 		targetStack = null;
 		needFlushTarget = currentTargetTex != null;
-		#if usesys
+		#if (usesys && !macro)
 		haxe.System.beginFrame();
 		#end
-		driver.begin(frameCount);
+		driver.begin(hxd.Timer.frameCount);
 		if( backgroundColor != null ) clear(backgroundColor, 1, 0);
 		return true;
 	}
@@ -365,6 +365,11 @@ class Engine {
 		needFlushTarget = false;
 	}
 
+	public function clearF( color : h3d.Vector, ?depth : Float, ?stencil : Int ) {
+		flushTarget();
+		driver.clear(color, depth, stencil);
+	}
+
 	public function clear( ?color : Int, ?depth : Float, ?stencil : Int ) {
 		if( color != null )
 			tmpVector.setColor(color);
@@ -400,7 +405,7 @@ class Engine {
 
 	public function dispose() {
 		driver.dispose();
-		stage.removeResizeEvent(onStageResize);
+		window.removeResizeEvent(onWindowResize);
 	}
 
 	function get_fps() {

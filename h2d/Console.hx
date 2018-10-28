@@ -16,8 +16,9 @@ typedef ConsoleArgDesc = {
 	?opt : Bool,
 }
 
-class Console extends h2d.Sprite {
+class Console #if !macro extends h2d.Object #end {
 
+	#if !macro
 	public static var HIDE_LOG_TIMEOUT = 3.;
 
 	var width : Int;
@@ -66,6 +67,34 @@ class Console extends h2d.Sprite {
 		commands.set(name, { help : help == null ? "" : help, args:args, callb:callb } );
 	}
 
+	#end
+
+	public macro function add( ethis, name, callb ) {
+		var args = [];
+		var et = haxe.macro.Context.typeExpr(callb);
+		switch( haxe.macro.Context.follow(et.t) ) {
+		case TFun(fargs, _):
+			for( a in fargs ) {
+				var t = haxe.macro.Context.followWithAbstracts(a.t);
+				var tstr = haxe.macro.TypeTools.toString(t);
+				var tval = switch( tstr ) {
+				case "Int": AInt;
+				case "Float": AFloat;
+				case "String": AString;
+				case "Bool": ABool;
+				default: haxe.macro.Context.error("Unsupported parameter type "+tstr+" for argument "+a.name, callb.pos);
+				}
+				var tname = ""+tval;
+				args.push(macro { name : $v{a.name}, t : h2d.Console.ConsoleArg.$tname, opt : $v{a.opt} });
+			}
+		default:
+			haxe.macro.Context.error(haxe.macro.TypeTools.toString(et.t)+" should be a function", callb.pos);
+		}
+		return macro $ethis.addCommand($name,null,$a{args},$callb);
+	}
+
+	#if !macro
+
 	public function addAlias( name, command ) {
 		aliases.set(name, command);
 	}
@@ -76,11 +105,11 @@ class Console extends h2d.Sprite {
 
 	override function onAdd() {
 		super.onAdd();
-		@:privateAccess getScene().stage.addEventTarget(onEvent);
+		@:privateAccess getScene().window.addEventTarget(onEvent);
 	}
 
 	override function onRemove() {
-		@:privateAccess getScene().stage.removeEventTarget(onEvent);
+		@:privateAccess getScene().window.removeEventTarget(onEvent);
 		super.onRemove();
 	}
 
@@ -356,5 +385,7 @@ class Console extends h2d.Sprite {
 		}
 		super.sync(ctx);
 	}
+
+	#end
 
 }

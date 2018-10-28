@@ -2,7 +2,6 @@ package h3d.pass;
 
 class DirShadowMap extends Shadows {
 
-	var lightCamera : h3d.Camera;
 	var customDepth : Bool;
 	var depth : h3d.mat.DepthBuffer;
 	var dshader : h3d.shader.DirShadow;
@@ -37,8 +36,8 @@ class DirShadowMap extends Shadows {
 		if( customDepth && depth != null ) depth.dispose();
 	}
 
-	function getShadowProj() {
-		return lightCamera.m;
+	public override function getShadowTex() {
+		return dshader.shadowMap;
 	}
 
 	public dynamic function calcShadowBounds( camera : h3d.Camera ) {
@@ -91,8 +90,9 @@ class DirShadowMap extends Shadows {
 			var cameraBounds = new h3d.col.Bounds();
 			for( pt in ctx.camera.getFrustumCorners() ) {
 				pt.transform(camera.mcam);
-				cameraBounds.addPos(pt.x, pt.y, pt.z);
+				cameraBounds.addPos(pt.x, pt.y, pt.z);				
 			}
+			cameraBounds.zMin = bounds.zMin;
 			bounds.intersection(bounds, cameraBounds);
 		}
 

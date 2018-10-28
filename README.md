@@ -1,4 +1,4 @@
-# Heaps  
+# Heaps
 _High Performance Game Framework_
 
 JD Special Deluxe Branch for iOS / Android
@@ -20,7 +20,9 @@ Heaps is currently working on:
 Community
 ---------
 
-Join us on Gitter <https://gitter.im/heapsio/Lobby>
+Ask questions or discuss on <https://community.heaps.io>
+
+Chat on Discord <https://discord.gg/sWCGm33> or Gitter <https://gitter.im/heapsio/Lobby>
 
 Samples
 -------
@@ -35,6 +37,9 @@ To compile:
 
 Project files for [Visual Studio Code](https://code.visualstudio.com/) are also generated.
 
-----
-* [Official website](http://heaps.io)
-* [Documentation](https://github.com/ncannasse/heaps/wiki)
+Get started!
+------------
+* [Installation](https://heaps.io/documentation/installation.html)
+* [Live samples with source code](https://heaps.io/samples/)
+* [Documentation](https://heaps.io/documentation/home.html)
+* [API documentation](https://heaps.io/api/)

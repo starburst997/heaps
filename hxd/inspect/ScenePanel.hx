@@ -271,15 +271,15 @@ class ScenePanel extends Panel {
 		btPick = j.find(".bt_pick");
 		btPick.click(function(_) {
 			btPick.toggleClass("active");
-			var stage = hxd.Stage.getInstance();
+			var window = hxd.Window.getInstance();
 			if( !btPick.hasClass("active") ) {
 				currentPick = null;
 				lastPickEvent = null;
-				stage.removeEventTarget(onPickEvent);
+				window.removeEventTarget(onPickEvent);
 				return;
 			}
 			lastPickEvent = 0;
-			stage.addEventTarget(onPickEvent);
+			window.addEventTarget(onPickEvent);
 		});
 	}
 
@@ -305,7 +305,7 @@ class ScenePanel extends Panel {
 	function onPickEvent( e : hxd.Event ) {
 		switch( e.kind ) {
 		case EMove:
-			lastPickEvent = h3d.Engine.getCurrent().frameCount;
+			lastPickEvent = hxd.Timer.frameCount;
 			var obj = scene.hardwarePick(e.relX, e.relY);
 			currentPick = obj == null ? null : obj.toMesh();
 		case EPush:
@@ -353,10 +353,10 @@ class ScenePanel extends Panel {
 		syncRec(scene, this);
 		while( sceneObjects.length > scenePosition )
 			sceneObjects.pop().dispose();
-		var frame = h3d.Engine.getCurrent().frameCount;
+		var frame = hxd.Timer.frameCount;
 		if( lastPickEvent != null && lastPickEvent < frame - 1 ) {
-			var stage = hxd.Stage.getInstance();
-			var e = new hxd.Event(EMove, stage.mouseX, stage.mouseY);
+			var window = hxd.Window.getInstance();
+			var e = new hxd.Event(EMove, window.mouseX, window.mouseY);
 			haxe.Timer.delay(function() { if( lastPickEvent == null ) return; onPickEvent(e); }, 0); // flash don't like to capture while rendering
 		}
 	}

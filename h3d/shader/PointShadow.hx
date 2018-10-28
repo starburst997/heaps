@@ -18,7 +18,7 @@ class PointShadow extends hxsl.Shader {
 		function fragment() {
 			if( enable ) {
 				var posToLight = transformedPosition.xyz - lightPos;
-				var dir = normalize(vec3(posToLight.x, posToLight.y, posToLight.z));
+				var dir = normalize(posToLight.xyz);
 				var depth = shadowMap.get(dir).r * zFar;
 				var zMax = length(posToLight);
 				var delta = (depth + shadowBias).min(zMax) - zMax;
